@@ -23,10 +23,18 @@ local https = require ("ssl.https")
 local ltn12 = require("ltn12")
 local modurl = require ("socket.url")
 
+local vartable = {
+	"urn:micasaverde-com:serviceId:SecuritySensor1,Tripped=0",
+	"urn:micasaverde-com:serviceId:SecuritySensor1,Armed=0"
+}
+
 local targets = {
 	{ipaddr="192.168.1.5", type="ping" },
 	{ipaddr="192.168.1.2", type="ping" }
 }
+
+local active_target = 0 -- 0 to modulo targets length
+
 ------------------------------------------------
 -- Debug --
 ------------------------------------------------
@@ -318,9 +326,53 @@ local function UserSetArmed(lul_device,newArmedValue)
 	return luup.variable_set("urn:micasaverde-com:serviceId:SecuritySensor1", "Armed", newArmedValue, lul_device)
 end
 
+function pingDevice(ipaddr)
+	debug(string.format("pingDevice(%s)",ipaddr))
+	-- ping -c 1 -W 10 192.168.1.3
+	return false
+end
+
+function httpDevice(ipaddr)
+	debug(string.format("httpDevice(%s)",ipaddr))
+	return false
+end
+
+local discovery_func = {
+	["ping"] = pingDevice,
+	["http"] = httpDevice,	
+}
+
+local function refreshOneDevice(lul_device,device_def)
+	debug(string.format("refreshOneDevice(%s,%s)",lul_device,json.encode(device_def)))
+	local success = (discovery_func[ device_def.type ])(device_def.ipaddr) 
+	if (success==false) then
+		warning(string.format("Device %s did not respond properly to %s probe",device_def.ipaddr,device_def.type))
+	end
+	-- todo
+	-- find child device
+	-- update the tripped status
+	return success
+end
+
+function refreshDevices(lul_device,no_refresh)
+	debug(string.format("refreshDevices(%s)",lul_device))
+	lul_device = tonumber(lul_device)
+	norefresh = norefresh or false
+	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
+	local targets = json.decode(js)
+	local success = refreshOneDevice(lul_device, targets[ active_target+1 ])
+	active_target = (active_target+1) % #targets
+	if (norefresh==false) then
+		local period = 15
+		debug(string.format("programming next refreshDevices(%s) in %s sec",lul_device,period))
+		luup.call_delay("refreshDevices",period,tostring(lul_device))
+	end
+	return success
+end
+
 local function SyncDevices(lul_device)	 
 	debug(string.format("SyncDevices(%s)",lul_device))
-	local js = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "")
+	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
 	local targets = json.decode(js)
 	if (targets~=nil) then
 		local child_devices = luup.chdev.start(lul_device);
@@ -333,7 +385,7 @@ local function SyncDevices(lul_device)
 				'urn:schemas-micasaverde-com:device:MotionSensor:1',				-- children device type
 				'D_MotionSensor1.xml',		-- children D-file
 				"", 						-- children I-file
-				"",							-- params
+				table.concat(vartable, "\n"),			-- params
 				false,						-- not embedded
 				false						-- invisible
 			)
@@ -349,7 +401,7 @@ end
 local function startEngine(lul_device)
 	debug(string.format("startEngine(%s)",lul_device))
 	lul_device = tonumber(lul_device)
-	local success =  SyncDevices(lul_device) -- and refreshHueData(lul_device)
+	local success =  SyncDevices(lul_device) and refreshDevices(lul_device)
 	return success
 end
 
@@ -362,7 +414,7 @@ function startupDeferred(lul_device)
 
 	-- tests
 	setVariableIfChanged(NETMON_SERVICE, "Targets", json.encode(targets), lul_device)
-	local zz = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "")
+	-- local zz = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "")
 	
 	if (debugmode=="1") then
 		DEBUG_MODE = true
