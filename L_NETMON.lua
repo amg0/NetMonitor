@@ -23,6 +23,10 @@ local https = require ("ssl.https")
 local ltn12 = require("ltn12")
 local modurl = require ("socket.url")
 
+local targets = {
+	{ipaddr="192.168.1.5", type="ping" },
+	{ipaddr="192.168.1.2", type="ping" }
+}
 ------------------------------------------------
 -- Debug --
 ------------------------------------------------
@@ -304,11 +308,48 @@ local function setDebugMode(lul_device,newDebugMode)
 	DEBUG_MODE=false
   end
 end
+------------------------------------------------
+-- UPNP actions Sequence
+------------------------------------------------
+local function UserSetArmed(lul_device,newArmedValue)
+	debug(string.format("UserSetArmed(%s,%s)",lul_device,newArmedValue))
+	lul_device = tonumber(lul_device)
+	newArmedValue = tonumber(newArmedValue)
+	return luup.variable_set("urn:micasaverde-com:serviceId:SecuritySensor1", "Armed", newArmedValue, lul_device)
+end
+
+local function SyncDevices(lul_device)	 
+	debug(string.format("SyncDevices(%s)",lul_device))
+	local js = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "")
+	local targets = json.decode(js)
+	if (targets~=nil) then
+		local child_devices = luup.chdev.start(lul_device);
+		for k,v in pairs(targets) do
+			local idx = tonumber(k)
+			luup.chdev.append(
+				lul_device, child_devices,
+				'child_'..v.ipaddr,					-- children map index is altid
+				v.ipaddr,					-- children map name attribute is device name
+				'urn:schemas-micasaverde-com:device:MotionSensor:1',				-- children device type
+				'D_MotionSensor1.xml',		-- children D-file
+				"", 						-- children I-file
+				"",							-- params
+				false,						-- not embedded
+				false						-- invisible
+			)
+		end
+		luup.chdev.sync(lul_device, child_devices)	
+	else
+		error(string.format("empty targets or bad json format:%s",js))
+		return false
+	end
+	return true
+end
 
 local function startEngine(lul_device)
 	debug(string.format("startEngine(%s)",lul_device))
-	local success=false
 	lul_device = tonumber(lul_device)
+	local success =  SyncDevices(lul_device) -- and refreshHueData(lul_device)
 	return success
 end
 
@@ -319,6 +360,10 @@ function startupDeferred(lul_device)
 	local debugmode = getSetVariable(NETMON_SERVICE, "Debug", lul_device, "0")
 	local oldversion = getSetVariable(NETMON_SERVICE, "Version", lul_device, "")
 
+	-- tests
+	setVariableIfChanged(NETMON_SERVICE, "Targets", json.encode(targets), lul_device)
+	local zz = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "")
+	
 	if (debugmode=="1") then
 		DEBUG_MODE = true
 		UserMessage("Enabling debug mode for device:"..lul_device,TASK_BUSY)
