@@ -354,10 +354,12 @@ local function refreshOneDevice(lul_device,device_def)
 	local success = (discovery_func[ device_def.type ])(device_def) 
 	if (success==false) then
 		warning(string.format("Device %s did not respond properly to %s probe",device_def.ipaddr,json.encode(device_def)))
+	else
+		debug("success")
 	end
 	-- todo
 	local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
-	setVariableIfChanged('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', (success==false) and 1 or 0, lul_child)
+	setVariableIfChanged('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', (success==false) and "1" or "0", lul_child)
 	return success
 end
 
