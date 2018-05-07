@@ -174,6 +174,7 @@ var NETMON = (function(api,$) {
 						targets.push( target )
 				});
 				NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, 'Targets', JSON.stringify(targets),true)
+				alert("Reloading Luup engine ... ")
 			}
 			form.classList.add('was-validated');
 		});
