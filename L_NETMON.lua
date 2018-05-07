@@ -30,7 +30,7 @@ local vartable = {
 
 local targets = {
 	{ipaddr="192.168.1.5", type="ping" },
-	{ipaddr="192.168.1.2", type="ping" }
+	{ipaddr="192.168.1.2", type="http",  page="http://%s"}
 }
 
 local active_target = 0 -- 0 to modulo targets length
@@ -326,15 +326,22 @@ local function UserSetArmed(lul_device,newArmedValue)
 	return luup.variable_set("urn:micasaverde-com:serviceId:SecuritySensor1", "Armed", newArmedValue, lul_device)
 end
 
-function pingDevice(ipaddr)
-	debug(string.format("pingDevice(%s)",ipaddr))
-	-- ping -c 1 -W 10 192.168.1.3
-	return false
+function pingDevice(device_def)
+	debug(string.format("pingDevice(%s) %s",device_def.ipaddr,"ping -c 1 -w 3 " .. device_def.ipaddr))
+	local returnCode = os.execute("ping -c 1 -w 3 " .. device_def.ipaddr) 
+	return (returnCode == 0)	-- 0 is good,  other is failure
 end
 
-function httpDevice(ipaddr)
-	debug(string.format("httpDevice(%s)",ipaddr))
-	return false
+function httpDevice(device_def)
+	debug(string.format("httpDevice(%s)",device_def.ipaddr))
+	local newUrl = string.format(device_def.page, device_def.ipaddr)
+	local httpcode,data = luup.inet.wget(newUrl,10)
+	debug(string.format("wget %s returned %s,%s",newUrl,httpcode,data or ""))
+	if (httpcode~=0) then
+		warning(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
+		return false
+	end
+	return true
 end
 
 local discovery_func = {
@@ -344,13 +351,13 @@ local discovery_func = {
 
 local function refreshOneDevice(lul_device,device_def)
 	debug(string.format("refreshOneDevice(%s,%s)",lul_device,json.encode(device_def)))
-	local success = (discovery_func[ device_def.type ])(device_def.ipaddr) 
+	local success = (discovery_func[ device_def.type ])(device_def) 
 	if (success==false) then
-		warning(string.format("Device %s did not respond properly to %s probe",device_def.ipaddr,device_def.type))
+		warning(string.format("Device %s did not respond properly to %s probe",device_def.ipaddr,json.encode(device_def)))
 	end
 	-- todo
-	-- find child device
-	-- update the tripped status
+	local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
+	setVariableIfChanged('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', (success==false) and 1 or 0, lul_child)
 	return success
 end
 
