@@ -11,28 +11,16 @@
 //-------------------------------------------------------------
 // NETMON  Plugin javascript Tabs
 //-------------------------------------------------------------
-/*
-if (typeof String.prototype.format == 'undefined') {
-	String.prototype.format = function()
-	{
-		var args = new Array(arguments.length);
 
-		for (var i = 0; i < args.length; ++i) {
-			// `i` is always valid index in the arguments object
-			// so we merely retrieve the value
-			args[i] = arguments[i];
-		}
-
-		return this.replace(/{(\d+)}/g, function(match, number) { 
-			return typeof args[number] != 'undefined' ? args[number] : match;
-		});
-	};
-};
-*/
 var myapi = window.api || null
 var NETMON = (function(api,$) {
+	
 	var NETMON_Svs = 'urn:upnp-org:serviceId:netmon1';
-	jQuery("body").prepend("<style>.NETMON-cls { width:100%; }</style>")
+	jQuery("body").prepend(`
+	<style>
+	.NETMON-cls { width:100%; }
+	.netmon-devicetbl .form-control { padding-left:2px; padding-right:0px; }
+	</style>`)
 
 	function isNullOrEmpty(value) {
 		return (value == null || value.length === 0);	// undefined == null also
@@ -65,9 +53,9 @@ var NETMON = (function(api,$) {
 		};
 		function _buildTargetLineHtml(target) {
 			var type = _buildTypesSelect('netmon-type',target.type)
-			var name = NETMON.format("<input class='form-control' id='netmon-name' value='{0}'></input>",target.name)
-			var ipaddr = NETMON.format("<input class='form-control' id='netmon-ipaddr' value='{0}'></input>",target.ipaddr || "")
-			var page = NETMON.format("<input class='form-control {1}' id='netmon-page' value='{0}'></input>",target.page || "", (target.type=='http') ? '' : 'd-none')
+			var name = NETMON.format("<input class='form-control' id='netmon-name' value='{0}' required></input>",target.name)
+			var ipaddr = NETMON.format("<input class='form-control' id='netmon-ipaddr' value='{0}' required></input>",target.ipaddr || "")
+			var page = NETMON.format("<input class='form-control {1}' id='netmon-page' value='{0}'></input>",target.page || "", (target.type=='http') ? '' : 'hidden d-none')
 			var btn_del = NETMON.format(btnTemplate,'netmon-del','Delete','fa fa-trash-o text-danger','btn-sm netmon-del')
 			return NETMON.format('<tr><td>{0}</td> <td>{1}</td> <td>{2}</td> <td>{3}</td> <td>{4}</td> </tr>',
 				name,
@@ -84,7 +72,8 @@ var NETMON = (function(api,$) {
 				type: $(row).find("#netmon-type").val(),
 				ipaddr: $(row).find("#netmon-ipaddr").val()
 			}
-			if ($(row).find("#netmon-page").hasClass("d-none") == false) {
+			var bool = $(row).find("#netmon-page").hasClass("d-none") || $(row).find("#netmon-page").hasClass("hidden")
+			if (bool == false) {
 				target.page = $(row).find("#netmon-page").val()
 			}
 			return target
@@ -112,7 +101,7 @@ var NETMON = (function(api,$) {
 			}
 			fields.push( 
 				NETMON.format('<tr><td>{0}</td><td>{1}</td></tr>',
-					NETMON.format("<label for='{0}'>{1}</label>",item.id,item.label),
+					NETMON.format("<label for='{0}'><b>{1}</b> :</label>",item.id,item.label),
 					editor ) 
 				)
 		})
@@ -126,7 +115,7 @@ var NETMON = (function(api,$) {
 
 		var btnTemplate = '<button id="{0}" type="button" class="btn btn-light {3}" title="{1}"><i class="{2}" aria-hidden="true" title="{1}"></i> {1}</button>'
 		var btn_add = NETMON.format(btnTemplate,'add','Add','fa fa-plus','netmon-add')
-		html += '<table class="table table-responsive table-sm netmon-devicetbl">'
+		html += '<form action="javascript:void(0);"><table class="table table-responsive table-sm netmon-devicetbl">'
 		html += '<thead>'
 		html += '<tr><th>Name</th> <th>Type</th> <th>IPAddr</th> <th>Page</th> <th>Action</th> </tr>'
 		html += '</thead>'
@@ -137,8 +126,9 @@ var NETMON = (function(api,$) {
 		html += '</tbody>'
 		html += '</table>'
 		html += btn_add;
-		html += "<button id='netmon-save' class='btn btn-primary'>Save and Reload</button>"
+		html += "<button id='netmon-save' type='submit' class='btn btn-primary'>Save and Reload</button>"
 		// set_panel_html(html);
+		html += "<form>"
 		api.setCpanelContent(html);
 		$(".netmon-devicetbl")
 		.off('click')
@@ -147,6 +137,9 @@ var NETMON = (function(api,$) {
 			var target = _getTargetFromLine(row)
 			$(row).replaceWith( _buildTargetLineHtml(target) ) 
 		})
+		// .on('change','#netmon-ipaddr', function(e) {
+			// var val = $(this).val()
+		// })
 		.on('click','.netmon-del', function(e) {
 			var id = $(this).prop('id').substring('del-'.length)
 			var tr = $(this).closest("tr").remove()
@@ -163,17 +156,26 @@ var NETMON = (function(api,$) {
 			$(".netmon-devicetbl").append( html )
 		})
 		$("#netmon-save").click( function() {
-			var that = this
-			$.each(map, function(idx,item) {
-				var varVal = jQuery('#'+item.id).val()
-				NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, item.variable, varVal, false)
-			});
-			var targets = []
-			$(".netmon-devicetbl tbody tr").each( function(i,row) {
-				var target = _getTargetFromLine(row)
-				targets.push( target )
-			});
-			NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, 'Targets', JSON.stringify(targets),true)
+			var form = $(this).closest("form")[0]
+			if (form.checkValidity() === false) {
+				event.preventDefault();
+				event.stopPropagation();
+				alert("The form has some invalid values")
+			} else {
+				var that = this
+				$.each(map, function(idx,item) {
+					var varVal = jQuery('#'+item.id).val()
+					NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, item.variable, varVal, false)
+				});
+				var targets = []
+				$(".netmon-devicetbl tbody tr").each( function(i,row) {
+					var target = _getTargetFromLine(row)
+					if ((target.name.length>0) && (target.ipaddr.length>0))
+						targets.push( target )
+				});
+				NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, 'Targets', JSON.stringify(targets),true)
+			}
+			form.classList.add('was-validated');
 		});
 	};
 	

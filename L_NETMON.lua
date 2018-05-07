@@ -423,12 +423,7 @@ function startupDeferred(lul_device)
 	local oldversion = getSetVariable(NETMON_SERVICE, "Version", lul_device, "")
 	local pollrate = getSetVariable(NETMON_SERVICE, "PollRate", lul_device, 10)
 	local targets = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "[]")
-	-- tests
-	-- local targets = {
-		-- {name="vera edge",ipaddr="192.168.1.5", type="ping" },
-		-- {name="DGS-1100 24p",ipaddr="192.168.1.2", type="http",  page="http://%s"}
-	-- }
-	-- setVariableIfChanged(NETMON_SERVICE, "Targets", json.encode(targets), lul_device)
+
 	local types = {}
 	for k,v in pairs(discovery_func) do
 		table.insert(types,k)
