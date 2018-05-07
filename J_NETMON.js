@@ -65,21 +65,20 @@ var NETMON = (function(api,$) {
 		};
 		function _buildTargetLineHtml(target) {
 			var type = _buildTypesSelect('netmon-type',target.type)
+			var name = NETMON.format("<input class='form-control' id='netmon-name' value='{0}'></input>",target.name)
 			var ipaddr = NETMON.format("<input class='form-control' id='netmon-ipaddr' value='{0}'></input>",target.ipaddr || "")
 			var page = NETMON.format("<input class='form-control {1}' id='netmon-page' value='{0}'></input>",target.page || "", (target.type=='http') ? '' : 'd-none')
 			var btn_del = NETMON.format(btnTemplate,'netmon-del','Delete','fa fa-trash-o text-danger','btn-sm netmon-del')
-			var btn_sav = NETMON.format(btnTemplate,'','Save','fa fa-floppy-o ','netmon-savline')
-			return NETMON.format('<tr><td><span id="netmon-name">{0}</span></td> <td>{1}</td> <td>{2}</td> <td>{3}</td> <td>{4}</td> </tr>',
-				target.name,
+			return NETMON.format('<tr><td>{0}</td> <td>{1}</td> <td>{2}</td> <td>{3}</td> <td>{4}</td> </tr>',
+				name,
 				type,
 				ipaddr,
 				page,
-				(target.name.includes("</input>")==true)? btn_sav : btn_del
+				btn_del
 			);
 		};
 		function _getTargetFromLine(row) {
-			var input = $(row).find("input#input-name")
-			var name = ($(input).length>0) ? $(input).val() : $(row).find("#netmon-name").text()
+			var name =  $(row).find("input#netmon-name").val()
 			var target = {
 				name: name,
 				type: $(row).find("#netmon-type").val(),
@@ -141,12 +140,8 @@ var NETMON = (function(api,$) {
 		html += "<button id='netmon-save' class='btn btn-primary'>Save and Reload</button>"
 		// set_panel_html(html);
 		api.setCpanelContent(html);
-		$(".netmon-devicetbl").off('click')
-		.on('click','.netmon-savline', function(e) {
-			var row = $(this).closest("tr")
-			var target = _getTargetFromLine(row);
-			$(row).replaceWith( _buildTargetLineHtml(target) ) 
-		})
+		$(".netmon-devicetbl")
+		.off('click')
 		.on('change','.netmon-select-type', function(e) {
 			var row = $(this).closest("tr")
 			var target = _getTargetFromLine(row)
@@ -159,7 +154,7 @@ var NETMON = (function(api,$) {
 		
 		$(".netmon-add").click(function(e) {
 			var target = {
-				name: "<input class='form-control' id='input-name'></input>",
+				name: '',
 				type:'ping',
 				ipaddr:"",
 				page:""

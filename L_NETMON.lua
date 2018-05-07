@@ -329,9 +329,10 @@ end
 
 function httpDevice(device_def)
 	debug(string.format("httpDevice(%s)",device_def.ipaddr))
-	local newUrl = string.format(device_def.page, device_def.ipaddr)
+	local newUrl = string.format("http://%s/%s",device_def.ipaddr,device_def.page)
+	debug(string.format("GET url %s",newUrl))
 	local httpcode,data = luup.inet.wget(newUrl,10)
-	debug(string.format("wget %s returned %s,%s",newUrl,httpcode,data or ""))
+	-- debug(string.format("wget %s returned %s,%s",newUrl,httpcode,string.sub(data or "",1,100) ))
 	if (httpcode~=0) then
 		warning(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
 		return false
@@ -346,15 +347,18 @@ local discovery_func = {
 
 local function refreshOneDevice(lul_device,device_def)
 	debug(string.format("refreshOneDevice(%s,%s)",lul_device,json.encode(device_def)))
-	local success = (discovery_func[ device_def.type ])(device_def) 
-	if (success==false) then
-		warning(string.format("Device %s did not respond properly to %s probe",device_def.ipaddr,json.encode(device_def)))
-	else
-		debug("success")
+	local success = false
+	if (device_def ~= nil) then
+		success = (discovery_func[ device_def.type ])(device_def) 
+		if (success==false) then
+			warning(string.format("Device %s did not respond properly to %s probe",device_def.ipaddr,json.encode(device_def)))
+		else
+			debug("success")
+		end
+		-- todo
+		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
+		setVariableIfChanged('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', (success==false) and "1" or "0", lul_child)
 	end
-	-- todo
-	local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
-	setVariableIfChanged('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', (success==false) and "1" or "0", lul_child)
 	return success
 end
 
@@ -379,6 +383,7 @@ local function SyncDevices(lul_device)
 	debug(string.format("SyncDevices(%s)",lul_device))
 	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
 	local targets = json.decode(js)
+	debug(string.format("Devices to Monitor: %s",js))
 	if (targets~=nil) then
 		local child_devices = luup.chdev.start(lul_device);
 		for k,v in pairs(targets) do
