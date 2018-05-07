@@ -56,22 +56,60 @@ var NETMON = (function(api,$) {
 	//-------------------------------------------------------------	
 
 	function NETMON_Settings(deviceID) {
-		var credentials = get_device_state(deviceID,  NETMON.NETMON_Svs, 'Credentials',1)
+		function _buildTypesSelect(id,selected) {
+			var result = NETMON.format('<select id="{0}" class="form-control netmon-select-type">{1}</select>',id,
+				$.map(types, function(type) {
+					return NETMON.format('<option {1}>{0}</option>',type,(type,selected==type) ? 'selected' : '')
+				}))
+			return result
+		};
+		function _buildTargetLineHtml(target) {
+			var type = _buildTypesSelect('netmon-type',target.type)
+			var ipaddr = NETMON.format("<input class='form-control' id='netmon-ipaddr' value='{0}'></input>",target.ipaddr || "")
+			var page = NETMON.format("<input class='form-control {1}' id='netmon-page' value='{0}'></input>",target.page || "", (target.type=='http') ? '' : 'd-none')
+			var btn_del = NETMON.format(btnTemplate,'netmon-del','Delete','fa fa-trash-o text-danger','btn-sm netmon-del')
+			var btn_sav = NETMON.format(btnTemplate,'','Save','fa fa-floppy-o ','netmon-savline')
+			return NETMON.format('<tr><td><span id="netmon-name">{0}</span></td> <td>{1}</td> <td>{2}</td> <td>{3}</td> <td>{4}</td> </tr>',
+				target.name,
+				type,
+				ipaddr,
+				page,
+				(target.name.includes("</input>")==true)? btn_sav : btn_del
+			);
+		};
+		function _getTargetFromLine(row) {
+			var input = $(row).find("input#input-name")
+			var name = ($(input).length>0) ? $(input).val() : $(row).find("#netmon-name").text()
+			var target = {
+				name: name,
+				type: $(row).find("#netmon-type").val(),
+				ipaddr: $(row).find("#netmon-ipaddr").val()
+			}
+			if ($(row).find("#netmon-page").hasClass("d-none") == false) {
+				target.page = $(row).find("#netmon-page").val()
+			}
+			return target
+		}
+
 		var map = [
-			{ variable:'Debug', id:'netmon-debug', label:'Debug' },
-		]
+			{ variable:'PollRate', id:'netmon-pollrate', label:'Max Poll Rate (sec)' },
+		];
 		var html = ""
-		var headings = "<tr><th></th><th></th></tr>"
+		var headings = ""; // "<tr><th></th><th></th></tr>"
 		var fields = [];
+
+		var mytargets = JSON.parse(get_device_state(deviceID,  NETMON.NETMON_Svs, 'Targets',1))
+		var types = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'Types',1))
+
 		$.each( map, function( idx, item) {
 			var value = (item.value!=undefined) ? item.value : get_device_state(deviceID,  NETMON.NETMON_Svs, item.variable,1)
 			var editor = ""
 			if (item.variable==undefined && item.value==undefined) {
 				editor = NETMON.format("<button id='{0}' class='btn btn-secondary btn-sm'>{1}</button>", item.id, item.label)
 			} else if (item.value==undefined) {
-				editor = NETMON.format("<input id='{0}' value='{1}'></input>",item.id, value)
+				editor = NETMON.format("<input class='form-control' id='{0}' value='{1}'></input>",item.id, value)
 			} else {
-				editor = NETMON.format("<input value='{0}' disabled></input>",value)
+				editor = NETMON.format("<input class='form-control' value='{0}' disabled></input>",value)
 			}
 			fields.push( 
 				NETMON.format('<tr><td>{0}</td><td>{1}</td></tr>',
@@ -79,32 +117,85 @@ var NETMON = (function(api,$) {
 					editor ) 
 				)
 		})
-
-		html += NETMON.format("<h3>Parameters</h3><table class='table'><thead>{0}</thead><tbody>{1}</tbody></table>",
+		
+		html += NETMON.format("<h3>Parameters</h3><table class='table table-responsive table-sm'><thead>{0}</thead><tbody>{1}</tbody></table>",
 			headings,
 			fields.join("\n") 
 		);
-		set_panel_html(html);
-		// api.setCpanelContent(html);
-		// $("#netmon-save").click( function() {
-			// var that = this
-			// $.each(map, function(idx,item) {
-				// var varVal = jQuery('#'+item.id).val()
-				// NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, item.variable, varVal, false)
-			// });
-		// });
+
+		fields=[];
+
+		var btnTemplate = '<button id="{0}" type="button" class="btn btn-light {3}" title="{1}"><i class="{2}" aria-hidden="true" title="{1}"></i> {1}</button>'
+		var btn_add = NETMON.format(btnTemplate,'add','Add','fa fa-plus','netmon-add')
+		html += '<table class="table table-responsive table-sm netmon-devicetbl">'
+		html += '<thead>'
+		html += '<tr><th>Name</th> <th>Type</th> <th>IPAddr</th> <th>Page</th> <th>Action</th> </tr>'
+		html += '</thead>'
+		html += '<tbody>'
+		$.each(mytargets, function(idx,target) {
+			html += _buildTargetLineHtml(target)
+		});
+		html += '</tbody>'
+		html += '</table>'
+		html += btn_add;
+		html += "<button id='netmon-save' class='btn btn-primary'>Save and Reload</button>"
+		// set_panel_html(html);
+		api.setCpanelContent(html);
+		$(".netmon-devicetbl").off('click')
+		.on('click','.netmon-savline', function(e) {
+			var row = $(this).closest("tr")
+			var target = _getTargetFromLine(row);
+			$(row).replaceWith( _buildTargetLineHtml(target) ) 
+		})
+		.on('change','.netmon-select-type', function(e) {
+			var row = $(this).closest("tr")
+			var target = _getTargetFromLine(row)
+			$(row).replaceWith( _buildTargetLineHtml(target) ) 
+		})
+		.on('click','.netmon-del', function(e) {
+			var id = $(this).prop('id').substring('del-'.length)
+			var tr = $(this).closest("tr").remove()
+		})
+		
+		$(".netmon-add").click(function(e) {
+			var target = {
+				name: "<input class='form-control' id='input-name'></input>",
+				type:'ping',
+				ipaddr:"",
+				page:""
+			}
+			var html = _buildTargetLineHtml(target) 
+			$(".netmon-devicetbl").append( html )
+		})
+		$("#netmon-save").click( function() {
+			var that = this
+			$.each(map, function(idx,item) {
+				var varVal = jQuery('#'+item.id).val()
+				NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, item.variable, varVal, false)
+			});
+			var targets = []
+			$(".netmon-devicetbl tbody tr").each( function(i,row) {
+				var target = _getTargetFromLine(row)
+				targets.push( target )
+			});
+			NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, 'Targets', JSON.stringify(targets),true)
+		});
 	};
 	
 	var myModule = {
 		NETMON_Svs 	: NETMON_Svs,
 		format		: format,
-		Dump 		: NETMON_Dump,
 		Settings 	: NETMON_Settings,
 		
 		//-------------------------------------------------------------
 		// Helper functions to build URLs to call VERA code from JS
 		//-------------------------------------------------------------
 
+		buildReloadUrl : function() {
+			var urlHead = '' + data_request_url + 'id=reload';
+			return urlHead;
+		},
+		
 		buildAttributeSetUrl : function( deviceID, varName, varValue){
 			var urlHead = '' + data_request_url + 'id=variableset&DeviceNum='+deviceID+'&Variable='+varName+'&Value='+varValue;
 			return urlHead;
@@ -140,6 +231,9 @@ var NETMON = (function(api,$) {
 				set_device_state(deviceID, service, varName, varVal, 0);	// lost in case of luup restart
 			} else {
 				jQuery.get( this.buildAttributeSetUrl( deviceID, varName, varVal) );
+			}
+			if (reload==true) {
+				$.get(this.buildReloadUrl())
 			}
 		},
 		save : function(deviceID, service, varName, varVal, func, reload) {

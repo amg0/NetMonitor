@@ -11,7 +11,7 @@ local NETMON_SERVICE	= "urn:upnp-org:serviceId:netmon1"
 local devicetype	= "urn:schemas-upnp-org:device:netmon:1"
 -- local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.0"
+local version		= "v0.1"
 local JSON_FILE = "D_NETMON.json"
 local UI7_JSON_FILE = "D_NETMON_UI7.json"
 
@@ -26,11 +26,6 @@ local modurl = require ("socket.url")
 local vartable = {
 	"urn:micasaverde-com:serviceId:SecuritySensor1,Tripped=0",
 	"urn:micasaverde-com:serviceId:SecuritySensor1,Armed=0"
-}
-
-local targets = {
-	{ipaddr="192.168.1.5", type="ping" },
-	{ipaddr="192.168.1.2", type="http",  page="http://%s"}
 }
 
 local active_target = 0 -- 0 to modulo targets length
@@ -372,11 +367,12 @@ function refreshDevices(lul_device,no_refresh)
 	local success = refreshOneDevice(lul_device, targets[ active_target+1 ])
 	active_target = (active_target+1) % #targets
 	if (norefresh==false) then
-		local period = 15
+		local period  = getSetVariable(NETMON_SERVICE, "PollRate", lul_device, 10)
+		period = tonumber(period)
 		debug(string.format("programming next refreshDevices(%s) in %s sec",lul_device,period))
 		luup.call_delay("refreshDevices",period,tostring(lul_device))
 	end
-	return success
+	return true	-- would be false if there is an error, but a failed discovery device is not an error
 end
 
 local function SyncDevices(lul_device)	 
@@ -389,8 +385,8 @@ local function SyncDevices(lul_device)
 			local idx = tonumber(k)
 			luup.chdev.append(
 				lul_device, child_devices,
-				'child_'..v.ipaddr,					-- children map index is altid
-				v.ipaddr,					-- children map name attribute is device name
+				'child_'..v.ipaddr,			-- altid
+				v.name,						-- device name
 				'urn:schemas-micasaverde-com:device:MotionSensor:1',				-- children device type
 				'D_MotionSensor1.xml',		-- children D-file
 				"", 						-- children I-file
@@ -420,9 +416,20 @@ function startupDeferred(lul_device)
 
 	local debugmode = getSetVariable(NETMON_SERVICE, "Debug", lul_device, "0")
 	local oldversion = getSetVariable(NETMON_SERVICE, "Version", lul_device, "")
-
+	local pollrate = getSetVariable(NETMON_SERVICE, "PollRate", lul_device, 10)
+	local targets = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "[]")
 	-- tests
-	setVariableIfChanged(NETMON_SERVICE, "Targets", json.encode(targets), lul_device)
+	-- local targets = {
+		-- {name="vera edge",ipaddr="192.168.1.5", type="ping" },
+		-- {name="DGS-1100 24p",ipaddr="192.168.1.2", type="http",  page="http://%s"}
+	-- }
+	-- setVariableIfChanged(NETMON_SERVICE, "Targets", json.encode(targets), lul_device)
+	local types = {}
+	for k,v in pairs(discovery_func) do
+		table.insert(types,k)
+	end
+	setVariableIfChanged(NETMON_SERVICE, "Types", json.encode(types), lul_device)
+	
 	-- local zz = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "")
 	
 	if (debugmode=="1") then
