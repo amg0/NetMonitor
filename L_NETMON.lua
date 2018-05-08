@@ -419,7 +419,7 @@ local function SyncDevices(lul_device)
 				'D_MotionSensor1.xml',		-- children D-file
 				"", 						-- children I-file
 				table.concat(vartable, "\n"),			-- params
-				false,						-- not embedded
+				true,						-- not embedded
 				false						-- invisible
 			)
 		end
