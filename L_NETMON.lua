@@ -250,6 +250,23 @@ end
 -- http://192.168.1.5:3480/data_request?id=lr_NETMON_Handler&command=xxx
 -- recommended settings in ALTUI: PATH = /data_request?id=lr_NETMON_Handler&mac=$M&deviceID=114
 ------------------------------------------------------------------------------------------------
+local function getDevicesStatus(lul_device)
+	debug( string.format("getDevicesStatus(%s)",lul_device))
+	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
+	local targets = json.decode(js)
+	local result = {}
+	for k,device_def in pairs(targets) do
+		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
+		local tripped = luup.variable_get('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', lul_child)
+		table.insert(result, {
+			name = device_def.name,
+			ipaddr = device_def.ipaddr,
+			tripped = tripped
+		})
+	end
+	return result
+end
+
 local function switch( command, actiontable)
   -- check if it is in the table, otherwise call default
   if ( actiontable[command]~=nil ) then
@@ -287,6 +304,13 @@ function myNETMON_Handler(lul_request, lul_parameters, lul_outputformat)
 		return "default handler / not successful", "text/plain"
 	  end,
 
+	  ["getStatus"]= 
+	  function(params)
+		local res = getDevicesStatus(deviceID)
+		local str = json.encode(res)
+		debug( string.format("result=%s", str) )
+		return str,"application/json"
+	  end
   }
   -- actual call
   lul_html , mime_type = switch(command,action)(lul_parameters)
@@ -299,7 +323,6 @@ end
 ------------------------------------------------
 -- UPNP Actions Sequence
 ------------------------------------------------
-
 local function setDebugMode(lul_device,newDebugMode)
   lul_device = tonumber(lul_device)
   newDebugMode = tonumber(newDebugMode) or 0

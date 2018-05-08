@@ -180,10 +180,36 @@ var NETMON = (function(api,$) {
 		});
 	};
 	
+	function NETMON_Status(deviceID) {
+		function sortByName(a,b) {
+			if (a.name == b.name)
+				return 0
+			return (a.name < b.name) ? -1 : 1
+		}
+		
+		$.get( this.buildHandlerUrl(deviceID,'getStatus',[]) )
+		.done( function(data) {
+			var html ="";
+			var model = $.map( data.sort( sortByName ), function(target) {
+				var statusTpl = "<span class={1}>{0}</span>"
+				return {
+					name: target.name,
+					ipaddr: target.ipaddr,
+					status: (target.tripped =="1")
+						? ("<b>"+NETMON.format( statusTpl, 'off-line' ,'text-danger' )+"</b>")
+						: NETMON.format( statusTpl, 'on-line' ,'text-success' )
+				}
+			});
+			var html = NETMON.array2Table(model,'name',[],'','montool-statustbl','montool-statustbl0',false)
+			api.setCpanelContent(html);
+		})
+	};
+	
 	var myModule = {
 		NETMON_Svs 	: NETMON_Svs,
 		format		: format,
 		Settings 	: NETMON_Settings,
+		Status 		: NETMON_Status,
 		
 		//-------------------------------------------------------------
 		// Helper functions to build URLs to call VERA code from JS

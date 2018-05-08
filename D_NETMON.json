@@ -161,11 +161,22 @@
 		"Function": "NETMON_Settings"
 	},
 	{
+		"Label": {
+			"lang_tag": "status",
+			"text": "Status"
+		},
+		"Position": 3,
+		"TopNavigationTab": "1",
+		"TabType": "javascript",
+		"ScriptName": "J_NETMON.js",
+		"Function": "NETMON.Status"
+	},
+	{
       "Label": {
         "lang_tag": "advanced",
         "text": "Advanced"
       },
-      "Position": "3",
+      "Position": "4",
       "TabType": "javascript",
       "ScriptName": "shared.js",
       "Function": "advanced_device"
