@@ -24,11 +24,20 @@
 		</action>
 
 		<action>
+			<serviceId>urn:upnp-org:serviceId:netmon1</serviceId>
+			<name>GetDevicesStatus</name>
+			<run>
+			return getDevicesStatus(lul_device)
+			</run>
+		</action>
+
+		<action>
 			<serviceId>urn:micasaverde-com:serviceId:SecuritySensor1</serviceId>
 			<name>SetArmed</name>
 			<run>
 			UserSetArmed(lul_device,lul_settings.newArmedValue)
 			</run>
 		</action>
+		         
 	</actionList>
 </implementation>

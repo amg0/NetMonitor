@@ -250,7 +250,7 @@ end
 -- http://192.168.1.5:3480/data_request?id=lr_NETMON_Handler&command=xxx
 -- recommended settings in ALTUI: PATH = /data_request?id=lr_NETMON_Handler&mac=$M&deviceID=114
 ------------------------------------------------------------------------------------------------
-local function getDevicesStatus(lul_device)
+function getDevicesStatus(lul_device)
 	debug( string.format("getDevicesStatus(%s)",lul_device))
 	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
 	local targets = json.decode(js)
@@ -264,6 +264,7 @@ local function getDevicesStatus(lul_device)
 			tripped = tripped
 		})
 	end
+	setVariableIfChanged(NETMON_SERVICE, "DevicesStatus", json.encode(result), lul_device)
 	return result
 end
 
@@ -446,6 +447,7 @@ function startupDeferred(lul_device)
 	local oldversion = getSetVariable(NETMON_SERVICE, "Version", lul_device, "")
 	local pollrate = getSetVariable(NETMON_SERVICE, "PollRate", lul_device, 10)
 	local targets = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "[]")
+	local ds = getSetVariable(NETMON_SERVICE, "DevicesStatus", lul_device, "[]")
 
 	local types = {}
 	for k,v in pairs(discovery_func) do

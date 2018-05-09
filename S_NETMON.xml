@@ -11,6 +11,12 @@
             <defaultValue>0</defaultValue>
             <shortCode>debug</shortCode>
         </stateVariable>
+        <stateVariable sendEvents="no">
+            <name>DevicesStatus</name>
+            <dataType>string</dataType>
+            <defaultValue></defaultValue>
+            <shortCode>devicesstatus</shortCode>
+        </stateVariable>
 	</serviceStateTable>
     <actionList>
         <action>
@@ -20,6 +26,16 @@
                     <name>newDebugMode</name>
                     <direction>in</direction>
                     <relatedStateVariable>Debug</relatedStateVariable>
+                </argument>
+            </argumentList>
+        </action>
+		<action>
+            <name>GetDevicesStatus</name>
+            <argumentList>
+                <argument>
+                    <name>DevicesStatus</name>
+                    <direction>out</direction>
+                    <relatedStateVariable>DevicesStatus</relatedStateVariable>
                 </argument>
             </argumentList>
         </action>
