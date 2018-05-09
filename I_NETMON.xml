@@ -13,15 +13,6 @@
 			return 4,0
 			</job>
 		</action>
-	
-		<action>
-			<serviceId>urn:upnp-org:serviceId:netmon1</serviceId>
-			<name>Refresh</name>
-			<job>
-			refreshNETMONData(lul_device,true)
-			return 4,0
-			</job>
-		</action>
 
 		<action>
 			<serviceId>urn:upnp-org:serviceId:netmon1</serviceId>

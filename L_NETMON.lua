@@ -11,7 +11,7 @@ local NETMON_SERVICE	= "urn:upnp-org:serviceId:netmon1"
 local devicetype	= "urn:schemas-upnp-org:device:netmon:1"
 -- local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.1"
+local version		= "v0.2"
 local JSON_FILE = "D_NETMON.json"
 local UI7_JSON_FILE = "D_NETMON_UI7.json"
 
@@ -255,9 +255,13 @@ function getDevicesStatus(lul_device)
 	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
 	local targets = json.decode(js)
 	local result = {}
+	local count = 0
 	for k,device_def in pairs(targets) do
 		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
 		local tripped = luup.variable_get('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', lul_child)
+		if (tripped=="1") then
+			count = count +1 
+		end
 		table.insert(result, {
 			name = device_def.name,
 			ipaddr = device_def.ipaddr,
@@ -265,6 +269,7 @@ function getDevicesStatus(lul_device)
 		})
 	end
 	setVariableIfChanged(NETMON_SERVICE, "DevicesStatus", json.encode(result), lul_device)
+	setVariableIfChanged(NETMON_SERVICE, "DevicesOfflineCount", count, lul_device)
 	return result
 end
 
@@ -394,6 +399,10 @@ function refreshDevices(lul_device,no_refresh)
 	local targets = json.decode(js)
 	local success = refreshOneDevice(lul_device, targets[ active_target+1 ])
 	active_target = (active_target+1) % #targets
+
+	-- refresh stats
+	getDevicesStatus(lul_device)
+
 	if (norefresh==false) then
 		local period  = getSetVariable(NETMON_SERVICE, "PollRate", lul_device, 10)
 		period = tonumber(period)
@@ -448,6 +457,7 @@ function startupDeferred(lul_device)
 	local pollrate = getSetVariable(NETMON_SERVICE, "PollRate", lul_device, 10)
 	local targets = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "[]")
 	local ds = getSetVariable(NETMON_SERVICE, "DevicesStatus", lul_device, "[]")
+	local dsc = getSetVariable(NETMON_SERVICE, "DevicesOfflineCount", lul_device, 0)
 
 	local types = {}
 	for k,v in pairs(discovery_func) do
