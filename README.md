@@ -16,6 +16,7 @@ The time between each polling rate is configurable by the PollRate variable and 
 
 - ChildrenSameRoom : automatically set by VERA because the device is marked embedded.
 - Debug : 0 or 1 according to debug mode ( 1 == debug )
+- DevicesStatus : a JSON table of device record, each device record contains tripped status, name, ipaddr
 - PollRate : the rate in seconds at which detection probes are run. the plugin goes to each device one by one , so 5 devices with a rate of 10 seconds will take 5x10 = 50 seconds (not counting the wait time for the response)  to circle accross the complete list of devices
 - Targets : a JSON internal structure to describe the device targets to monitor. edit it with the Settings screens
 - Types : internal , types of probes
@@ -26,6 +27,7 @@ NOTE, the NETMON device is a "Embedded" device: meaning that all its children de
 
 ### Actions
 - SetDebug(newDebugMode) :  set debug mode on or off
+- GetDevicesStatus()	 :  returns a UPNP action result format with the DeviceStatus value as a content
 
 ### Future evolutions and architectural flexibility
 Also the plugin is architected to be able to add new kind of probes in the future. for now it is either a direct ping to a IP4 address or a http get on a page you can specify ( by default http://ipaddr or if you specific a page it can check http://ipaddr/page ) but I welcome suggestion or contribution for other kind of discovery probes ( could be UDP, UPNP, serial or whatever )
