@@ -32,6 +32,10 @@ NOTE, the NETMON device is a "Embedded" device: meaning that all its children de
 - SetDebug(newDebugMode) :  set debug mode on or off
 - GetDevicesStatus()	 :  returns a UPNP action result format with the DeviceStatus value as a content
 
+### Triggers
+- on ALTUI and OpenLuup you can use any variable / expression as a trigger
+- on classic UI5 UI7 we use triggers.  There is a trigger 'Offline device count goes above/below a certain threshold'
+
 ### Future evolutions and architectural flexibility
 Also the plugin is architected to be able to add new kind of probes in the future. for now it is either a direct ping to a IP4 address or a http get on a page you can specify ( by default http://ipaddr or if you specific a page it can check http://ipaddr/page ) but I welcome suggestion or contribution for other kind of discovery probes ( could be UDP, UPNP, serial or whatever )
 

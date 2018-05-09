@@ -208,155 +208,61 @@
   "eventList":{
   },
   "eventList2": [
-      {
+	  {
 		"id": 1,
 		"label": {
-			"lang_tag": "NETMON_reachable",
-			"text": "NETMON server is reachable or not"
+			"lang_tag": "offlinecount_goes_below",
+			"text": "Offline count goes below"
 		},
 		"serviceId": "urn:upnp-org:serviceId:netmon1",
 		"norepeat": "1",
 		"argumentList": [
 			{
-			  "id": 1,
-			  "dataType": "ui4",
-			  "defaultValue": 0,
-			  "allowedValueList": [
-				{
-				  "Not Reachable": "0",
-				  "HumanFriendlyText": {
-					"lang_tag": "NETMON_device_away",
-					"text": "_DEVICE_NAME_ is not reachable"
-				  }
+				"id": 1,
+				"dataType": "int",
+				"name": "DevicesOfflineCount",
+				"comparisson": "<",
+				"prefix": {
+					"lang_tag": "offlinecount",
+					"text": "Offline count"
 				},
-				{
-				  "Reachable": "100",
-				  "HumanFriendlyText": {
-					"lang_tag": "NETMON_device_present",
-					"text": "_DEVICE_NAME_ is reachable"
-				  }
+				"suffix": {
+				},
+				"HumanFriendlyText": {
+					"lang_tag": "offlinecount_goes_below",
+					"text": "_DEVICE_NAME_ Offline count goes below _ARGUMENT_VALUE_ "
 				}
-			  ],
-			  "name": "IconCode",
-			  "comparisson": "=",
-			  "prefix": {
-				"lang_tag": "which_mode",
-				"text": "Which mode"
-			  },
-			  "suffix": {
-			  }
 			}
 		]
-      },
+	  },
 	  {
 		"id": 2,
 		"label": {
-			"lang_tag": "ph_goes_below",
-			"text": "PH goes below"
+			"lang_tag": "offlinecount_goes_above",
+			"text": "Offline count goes above"
 		},
 		"serviceId": "urn:upnp-org:serviceId:netmon1",
 		"norepeat": "1",
 		"argumentList": [
 			{
 				"id": 1,
-				"dataType": "float",
-				"name": "PH",
-				"comparisson": "<",
-				"prefix": {
-					"lang_tag": "ph",
-					"text": "PH"
-				},
-				"suffix": {
-				},
-				"HumanFriendlyText": {
-					"lang_tag": "ph_goes_below",
-					"text": "_DEVICE_NAME_ PH goes below _ARGUMENT_VALUE_ "
-				}
-			}
-		]
-	  },
-	  {
-		"id": 3,
-		"label": {
-			"lang_tag": "ph_goes_above",
-			"text": "PH goes above"
-		},
-		"serviceId": "urn:upnp-org:serviceId:netmon1",
-		"norepeat": "1",
-		"argumentList": [
-			{
-				"id": 1,
-				"dataType": "float",
-				"name": "PH",
+				"dataType": "int",
+				"name": "DevicesOfflineCount",
 				"comparisson": ">",
 				"prefix": {
-					"lang_tag": "ph",
-					"text": "PH"
+					"lang_tag": "offlinecount",
+					"text": "Offline count"
 				},
 				"suffix": {
 				},
 				"HumanFriendlyText": {
-					"lang_tag": "ph_goes_above",
-					"text": "_DEVICE_NAME_ PH goes above _ARGUMENT_VALUE_ "
+					"lang_tag": "offlinecount_goes_above",
+					"text": "_DEVICE_NAME_ Offline count goes above _ARGUMENT_VALUE_ "
 				}
 			}
 		]
 	  },
-	  {
-		"id": 4,
-		"label": {
-			"lang_tag": "temperature_goes_above",
-			"text": "Temperature goes above"
-		},
-		"serviceId": "urn:upnp-org:serviceId:netmon1",
-		"norepeat": "1",
-		"argumentList": [
-			{
-				"id": 1,
-				"dataType": "float",
-				"name": "CurrentTemperature",
-				"comparisson": ">",
-				"prefix": {
-					"lang_tag": "temperature",
-					"text": "Temperature"
-				},
-				"suffix": {
-				},
-				"HumanFriendlyText": {
-					"lang_tag": "temperature_goes_above",
-					"text": "_DEVICE_NAME_ Temperature goes above _ARGUMENT_VALUE_ "
-				}
-			}
-		]
-	  },
-	  {
-		"id": 5,
-		"label": {
-			"lang_tag": "temperature_goes_below",
-			"text": "Temperature goes below"
-		},
-		"serviceId": "urn:upnp-org:serviceId:netmon1",
-		"norepeat": "1",
-		"argumentList": [
-			{
-				"id": 1,
-				"dataType": "float",
-				"name": "CurrentTemperature",
-				"comparisson": "<",
-				"prefix": {
-					"lang_tag": "temperature",
-					"text": "Temperature"
-				},
-				"suffix": {
-				},
-				"HumanFriendlyText": {
-					"lang_tag": "temperature_goes_below",
-					"text": "_DEVICE_NAME_ Temperature goes below _ARGUMENT_VALUE_ "
-				}
-			}
-		]
-	  }
-  ],
+	],
   "DeviceType": "urn:schemas-upnp-org:device:netmon:1",
   "device_type": "urn:schemas-upnp-org:device:netmon:1"
 }
