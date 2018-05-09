@@ -16,6 +16,9 @@ var myapi = window.api || null
 var NETMON = (function(api,$) {
 	
 	var NETMON_Svs = 'urn:upnp-org:serviceId:netmon1';
+	var splits = jQuery.fn.jquery.split(".");
+	var ui5 = (splits[0]=="1" && splits[1]<="5");
+	
 	jQuery("body").prepend(`
 	<style>
 	.NETMON-cls { width:100%; }
@@ -32,7 +35,7 @@ var NETMON = (function(api,$) {
 	   for (var i=1; i < arguments.length; i++)
 	   {
 			var replacement = new RegExp('\\{' + (i-1) + '\\}', 'g');	// regex requires \ and assignment into string requires \\,
-			// if ($.type(arguments[i]) === "string")
+			// if (jQuery.type(arguments[i]) === "string")
 				// arguments[i] = arguments[i].replace(/\$/g,'$');
 			content = content.replace(replacement, arguments[i]);  
 	   }
@@ -46,7 +49,7 @@ var NETMON = (function(api,$) {
 	function NETMON_Settings(deviceID) {
 		function _buildTypesSelect(id,selected) {
 			var result = NETMON.format('<select id="{0}" class="form-control netmon-select-type">{1}</select>',id,
-				$.map(types, function(type) {
+				jQuery.map(types, function(type) {
 					return NETMON.format('<option {1}>{0}</option>',type,(type,selected==type) ? 'selected' : '')
 				}))
 			return result
@@ -66,15 +69,15 @@ var NETMON = (function(api,$) {
 			);
 		};
 		function _getTargetFromLine(row) {
-			var name =  $(row).find("input#netmon-name").val()
+			var name =  jQuery(row).find("input#netmon-name").val()
 			var target = {
 				name: name,
-				type: $(row).find("#netmon-type").val(),
-				ipaddr: $(row).find("#netmon-ipaddr").val()
+				type: jQuery(row).find("#netmon-type").val(),
+				ipaddr: jQuery(row).find("#netmon-ipaddr").val()
 			}
-			var bool = $(row).find("#netmon-page").hasClass("d-none") || $(row).find("#netmon-page").hasClass("hidden")
+			var bool = jQuery(row).find("#netmon-page").hasClass("d-none") || jQuery(row).find("#netmon-page").hasClass("hidden")
 			if (bool == false) {
-				target.page = $(row).find("#netmon-page").val()
+				target.page = jQuery(row).find("#netmon-page").val()
 			}
 			return target
 		}
@@ -89,7 +92,7 @@ var NETMON = (function(api,$) {
 		var mytargets = JSON.parse(get_device_state(deviceID,  NETMON.NETMON_Svs, 'Targets',1))
 		var types = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'Types',1))
 
-		$.each( map, function( idx, item) {
+		jQuery.each( map, function( idx, item) {
 			var value = (item.value!=undefined) ? item.value : get_device_state(deviceID,  NETMON.NETMON_Svs, item.variable,1)
 			var editor = ""
 			if (item.variable==undefined && item.value==undefined) {
@@ -104,7 +107,7 @@ var NETMON = (function(api,$) {
 					NETMON.format("<label for='{0}'><b>{1}</b> :</label>",item.id,item.label),
 					editor ) 
 				)
-		})
+		});
 		
 		html += NETMON.format("<h3>Parameters</h3><table class='table table-responsive table-sm'><thead>{0}</thead><tbody>{1}</tbody></table>",
 			headings,
@@ -120,7 +123,7 @@ var NETMON = (function(api,$) {
 		html += '<tr><th>Name</th> <th>Type</th> <th>IPAddr</th> <th>Page</th> <th>Action</th> </tr>'
 		html += '</thead>'
 		html += '<tbody>'
-		$.each(mytargets, function(idx,target) {
+		jQuery.each(mytargets, function(idx,target) {
 			html += _buildTargetLineHtml(target)
 		});
 		html += '</tbody>'
@@ -129,23 +132,20 @@ var NETMON = (function(api,$) {
 		html += "<button id='netmon-save' type='submit' class='btn btn-primary'>Save and Reload</button>"
 		// set_panel_html(html);
 		html += "<form>"
-		api.setCpanelContent(html);
-		$(".netmon-devicetbl")
-		.off('click')
-		.on('change','.netmon-select-type', function(e) {
-			var row = $(this).closest("tr")
-			var target = _getTargetFromLine(row)
-			$(row).replaceWith( _buildTargetLineHtml(target) ) 
-		})
-		// .on('change','#netmon-ipaddr', function(e) {
-			// var val = $(this).val()
-		// })
-		.on('click','.netmon-del', function(e) {
-			var id = $(this).prop('id').substring('del-'.length)
-			var tr = $(this).closest("tr").remove()
-		})
+		// api.setCpanelContent(html);
+		set_panel_html(html);
 		
-		$(".netmon-add").click(function(e) {
+		function _onChangeType(e) {
+			var row = jQuery(this).closest("tr")
+			var target = _getTargetFromLine(row)
+			jQuery(row).replaceWith( _buildTargetLineHtml(target) ) 		
+		}
+		function _onDelLine(e) {
+			var id = (ui5==true) ? jQuery(this).attr('id') : jQuery(this).prop('id')
+			id = id.substring('del-'.length)
+			var tr = jQuery(this).closest("tr").remove()
+		}
+		function _onAddLine(e) {
 			var target = {
 				name: '',
 				type:'ping',
@@ -153,31 +153,46 @@ var NETMON = (function(api,$) {
 				page:""
 			}
 			var html = _buildTargetLineHtml(target) 
-			$(".netmon-devicetbl").append( html )
-		})
-		$("#netmon-save").click( function() {
-			var form = $(this).closest("form")[0]
+			jQuery(".netmon-devicetbl").append( html )
+		}
+		function _onSave(e) {
+			var form = jQuery(this).closest("form")[0]
 			if (form.checkValidity() === false) {
 				event.preventDefault();
 				event.stopPropagation();
 				alert("The form has some invalid values")
 			} else {
 				var that = this
-				$.each(map, function(idx,item) {
+				jQuery.each(map, function(idx,item) {
 					var varVal = jQuery('#'+item.id).val()
 					NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, item.variable, varVal, false)
 				});
 				var targets = []
-				$(".netmon-devicetbl tbody tr").each( function(i,row) {
+				jQuery(".netmon-devicetbl tbody tr").each( function(i,row) {
 					var target = _getTargetFromLine(row)
 					if ((target.name.length>0) && (target.ipaddr.length>0))
 						targets.push( target )
 				});
-				NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, 'Targets', JSON.stringify(targets),true)
-				alert("Reloading Luup engine ... ")
+				NETMON.saveVar(deviceID,  NETMON.NETMON_Svs, 'Targets', JSON.stringify(targets),(ui5==false))
+				alert((ui5==false) ? "Reloading Luup engine ... " : "Save your changes")
 			}
 			form.classList.add('was-validated');
-		});
+		}
+		
+		jQuery(".netmon-add").click( _onAddLine );
+		jQuery("#netmon-save").click( _onSave );
+		if (ui5) {
+			jQuery(".netmon-devicetbl")
+				.undelegate()
+				.delegate('.netmon-select-type','change', _onChangeType)
+				.delegate('.netmon-del','click', _onDelLine)				
+			
+		} else {
+			jQuery(".netmon-devicetbl")
+				.off('click')
+				.on('change','.netmon-select-type', _onChangeType )
+				.on('click','.netmon-del', _onDelLine );
+		}
 	};
 	
 	function NETMON_Status(deviceID) {
@@ -189,7 +204,7 @@ var NETMON = (function(api,$) {
 		
 		var html ="";
 		var data = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'DevicesStatus',1))
-		var model = $.map( data.sort( sortByName ), function(target) {
+		var model = jQuery.map( data.sort( sortByName ), function(target) {
 			var statusTpl = "<span class={1}>{0}</span>"
 			return {
 				name: target.name,
@@ -200,7 +215,8 @@ var NETMON = (function(api,$) {
 			}
 		});
 		var html = NETMON.array2Table(model,'name',[],'','montool-statustbl','montool-statustbl0',false)
-		api.setCpanelContent(html);
+		set_panel_html(html);
+		// api.setCpanelContent(html);
 	};
 	
 	var myModule = {
@@ -255,7 +271,7 @@ var NETMON = (function(api,$) {
 				jQuery.get( this.buildAttributeSetUrl( deviceID, varName, varVal) );
 			}
 			if (reload==true) {
-				$.get(this.buildReloadUrl())
+				jQuery.get(this.buildReloadUrl())
 			}
 		},
 		save : function(deviceID, service, varName, varVal, func, reload) {
@@ -308,16 +324,16 @@ var NETMON = (function(api,$) {
 			var viscols = viscols || [idcolumn];
 			var responsive = ((bResponsive==null) || (bResponsive==true)) ? 'table-responsive-OFF' : ''
 
-			if ( (arr) && ($.isArray(arr) && (arr.length>0)) ) {
+			if ( (arr) && (jQuery.isArray(arr) && (arr.length>0)) ) {
 				var display_order = [];
 				var keys= Object.keys(arr[0]);
-				$.each(viscols,function(k,v) {
-					if ($.inArray(v,keys)!=-1) {
+				jQuery.each(viscols,function(k,v) {
+					if (jQuery.inArray(v,keys)!=-1) {
 						display_order.push(v);
 					}
 				});
-				$.each(keys,function(k,v) {
-					if ($.inArray(v,viscols)==-1) {
+				jQuery.each(keys,function(k,v) {
+					if (jQuery.inArray(v,viscols)==-1) {
 						display_order.push(v);
 					}
 				});
@@ -326,15 +342,15 @@ var NETMON = (function(api,$) {
 				html+= NETMON.format("<table id='{1}' class='table {2} table-sm table-hover table-striped {0}'>",cls || '', htmlid || 'altui-grid' , responsive );
 				if (caption)
 					html += NETMON.format("<caption>{0}</caption>",caption)
-				$.each(arr, function(idx,obj) {
+				jQuery.each(arr, function(idx,obj) {
 					if (bFirst) {
 						html+="<thead>"
 						html+="<tr>"
-						$.each(display_order,function(_k,k) {
+						jQuery.each(display_order,function(_k,k) {
 							html+=NETMON.format("<th style='text-transform: capitalize;' data-column-id='{0}' {1} {2}>",
 								k,
 								(k==idcolumn) ? "data-identifier='true'" : "",
-								NETMON.format("data-visible='{0}'", $.inArray(k,viscols)!=-1 )
+								NETMON.format("data-visible='{0}'", jQuery.inArray(k,viscols)!=-1 )
 							)
 							html+=k;
 							html+="</th>"
@@ -345,7 +361,7 @@ var NETMON = (function(api,$) {
 						bFirst=false;
 					}
 					html+="<tr>"
-					$.each(display_order,function(_k,k) {
+					jQuery.each(display_order,function(_k,k) {
 						html+="<td>"
 						html+=(obj[k]!=undefined) ? obj[k] : '';
 						html+="</td>"
@@ -368,6 +384,14 @@ var NETMON = (function(api,$) {
 //-------------------------------------------------------------
 // Device TAB : Donate
 //-------------------------------------------------------------	
+function NETMON_Settings (deviceID) {
+	return NETMON.Settings(deviceID)
+}
+
+function NETMON_Status (deviceID) {
+	return NETMON.Status(deviceID)
+}
+		
 function NETMON_Donate(deviceID) {
 	var htmlDonate='<p>Ce plugin est gratuit mais vous pouvez aider l\'auteur par une donation modique qui sera tres appréciée</p><p>This plugin is free but please consider supporting it by a very appreciated donation to the author.</p>';
 	htmlDonate+='<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank"><input type="hidden" name="cmd" value="_donations"><input type="hidden" name="business" value="alexis.mermet@free.fr"><input type="hidden" name="lc" value="FR"><input type="hidden" name="item_name" value="Alexis Mermet"><input type="hidden" name="item_number" value="NETMON"><input type="hidden" name="no_note" value="0"><input type="hidden" name="currency_code" value="EUR"><input type="hidden" name="bn" value="PP-DonationsBF:btn_donateCC_LG.gif:NonHostedGuest"><input type="image" src="https://www.paypalobjects.com/en_US/FR/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!"><img alt="" border="0" src="https://www.paypalobjects.com/fr_FR/i/scr/pixel.gif" width="1" height="1"></form>';

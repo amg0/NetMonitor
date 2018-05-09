@@ -1,6 +1,6 @@
 {
-  "flashicon": "https://raw.githubusercontent.com/amg0/NetMonitor/master/iconNETMON.png",
-  "default_icon": "https://raw.githubusercontent.com/amg0/NetMonitor/master/iconNETMON.png",
+  "flashicon": "http://raw.githubusercontent.com/amg0/NetMonitor/master/iconNETMON.png",
+  "default_icon": "http://raw.githubusercontent.com/amg0/NetMonitor/master/iconNETMON.png",
   "halloIconsDir": "pics\/hallo",
   "x": "2",
   "y": "4",
@@ -169,7 +169,7 @@
 		"TopNavigationTab": "1",
 		"TabType": "javascript",
 		"ScriptName": "J_NETMON.js",
-		"Function": "NETMON.Status"
+		"Function": "NETMON_Status"
 	},
 	{
       "Label": {
