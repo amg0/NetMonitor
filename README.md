@@ -6,6 +6,8 @@ This plugin is enabling you to check the availability of some device on your IP 
 -Tripped:  means the device is not present or fails
 -Untripped: means the device is properly responding to the probe
 
+The plugin supports UI5, UI7 and ALTUI , also openluup
+
 ### How it compares to others
 The big differences with similar plugin ( like the ping sensor ) are that :
 1. it is rewritten in a little more modern way ( with a .lua file ) and the main plugin device (NETMON) allows for central configuration. You do not have to create all devices manually.
