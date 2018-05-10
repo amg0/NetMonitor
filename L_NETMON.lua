@@ -11,7 +11,7 @@ local NETMON_SERVICE	= "urn:upnp-org:serviceId:netmon1"
 local devicetype	= "urn:schemas-upnp-org:device:netmon:1"
 -- local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.2"
+local version		= "v0.3"
 local JSON_FILE = "D_NETMON.json"
 local UI7_JSON_FILE = "D_NETMON_UI7.json"
 
@@ -362,7 +362,8 @@ function httpDevice(device_def)
 	debug(string.format("GET url %s",newUrl))
 	local httpcode,data = luup.inet.wget(newUrl,10)
 	-- debug(string.format("wget %s returned %s,%s",newUrl,httpcode,string.sub(data or "",1,100) ))
-	if (httpcode~=0) then
+	-- 0 or 401 are fine, it means http responded so the device is online
+	if ((httpcode~=0) and (httpcode~=401)) then
 		warning(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
 		return false
 	end
