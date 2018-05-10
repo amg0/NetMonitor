@@ -1,6 +1,6 @@
 {
-  "flashicon": "https://raw.githubusercontent.com/amg0/NetMonitor/master/iconNETMON.png",
-  "default_icon": "https://raw.githubusercontent.com/amg0/NetMonitor/master/iconNETMON.png",
+  "flashicon": "https://cdn.rawgit.com/amg0/NetMonitor/dcd703ca/iconNETMON.png",
+  "default_icon": "https://cdn.rawgit.com/amg0/NetMonitor/dcd703ca/iconNETMON.png",
   "halloIconsDir": "pics\/hallo",
 
   "x": "2",

@@ -41,7 +41,7 @@ Also the plugin is architected to be able to add new kind of probes in the futur
 
 
 ### Installation
-The plugin is not yet in the App Store but you can find the sources on https://github.com/amg0/NetMonitor
-if you use the **AltAppStore** from **ALTUI**, you can install from here
+The plugin will soon be released in the VERA App Store (http://apps.mios.com/plugin.php?id=9081) but you can find the sources on https://github.com/amg0/NetMonitor
+if you use the **AltAppStore** from **ALTUI**, you can install from here.
 
 To install manually, download the files from github , upload them and manually create the device
