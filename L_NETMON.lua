@@ -360,14 +360,15 @@ function httpDevice(device_def)
 	debug(string.format("httpDevice(%s)",device_def.ipaddr))
 	local newUrl = string.format("http://%s/%s",device_def.ipaddr,device_def.page)
 	debug(string.format("GET url %s",newUrl))
-	local httpcode,data = luup.inet.wget(newUrl,10)
-	-- debug(string.format("wget %s returned %s,%s",newUrl,httpcode,string.sub(data or "",1,100) ))
+	local code,data,httpcode = luup.inet.wget(newUrl,10)
+	debug(string.format("wget %s returned code:%s httpcode:%s data:%s",newUrl,code, httpcode,string.sub(data or "",1,100) ))
 	-- 0 or 401 are fine, it means http responded so the device is online
-	if ((httpcode~=0) and (httpcode~=401)) then
-		warning(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
-		return false
+	-- on vera, a 401 return could create a httpcode == -1 but data contains something
+	if ((code==0) or (httpcode==200) or (httpcode==302) or (httpcode==401)) then
+		return true
 	end
-	return true
+	warning(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
+	return false
 end
 
 local discovery_func = {
