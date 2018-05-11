@@ -123,7 +123,7 @@ var NETMON = (function(api,$) {
 		html += '<tr><th>Name</th> <th>Type</th> <th>IPAddr</th> <th>Page</th> <th>Action</th> </tr>'
 		html += '</thead>'
 		html += '<tbody>'
-		jQuery.each(mytargets, function(idx,target) {
+		jQuery.each(mytargets.sort(sortByName), function(idx,target) {
 			html += _buildTargetLineHtml(target)
 		});
 		html += '</tbody>'
