@@ -364,7 +364,7 @@ function httpDevice(device_def)
 	debug(string.format("wget %s returned code:%s httpcode:%s data:%s",newUrl,code, httpcode,string.sub(data or "",1,100) ))
 	-- 0 or 401 are fine, it means http responded so the device is online
 	-- on vera, a 401 return could create a httpcode == -1 but data contains something
-	if ((code==0) or (httpcode==200) or (httpcode==302) or (httpcode==401)) then
+	if ((code==0) or (httpcode==200) or (httpcode==302) or (httpcode==401) or (httpcode==403) ) then
 		return true
 	end
 	warning(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
