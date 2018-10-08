@@ -196,7 +196,11 @@ var NETMON = (function(api,$) {
 	};
 	
 	function NETMON_Status(deviceID) {
-		function sortByName(a,b) {
+		function sortByStatusAndName(a,b) {
+			if (a.tripped > b.tripped)
+				return -1
+			if (a.tripped < b.tripped)
+				return 1
 			if (a.name == b.name)
 				return 0
 			return (a.name < b.name) ? -1 : 1
@@ -204,7 +208,7 @@ var NETMON = (function(api,$) {
 		
 		var html ="";
 		var data = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'DevicesStatus',1))
-		var model = jQuery.map( data.sort( sortByName ), function(target) {
+		var model = jQuery.map( data.sort( sortByStatusAndName ), function(target) {
 			var statusTpl = "<span class={1}>{0}</span>"
 			return {
 				name: target.name,
