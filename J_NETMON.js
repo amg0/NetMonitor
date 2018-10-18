@@ -205,21 +205,41 @@ var NETMON = (function(api,$) {
 				return 0
 			return (a.name < b.name) ? -1 : 1
 		}
-		
-		var html ="";
+		function getHtml(data) {
+			var model = jQuery.map( data.sort( sortByStatusAndName ), function(target) {
+				var statusTpl = "<span class={1}>{0}</span>"
+				return {
+					name: target.name,
+					ipaddr: target.ipaddr,
+					status: (target.tripped =="1")
+						? ("<b>"+NETMON.format( statusTpl, 'off-line' ,'text-danger' )+"</b>")
+						: NETMON.format( statusTpl, 'on-line' ,'text-success' ),
+					test: NETMON.format('<button type="button" class="btn btn-outline-primary btn-sm montool-test-btn" data-ip="{0}">Test</button>',target.ipaddr)
+				}
+			});
+			return NETMON.array2Table(model,'name',[],'','montool-statustbl','montool-statustbl0',false)
+		}
 		var data = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'DevicesStatus',1))
-		var model = jQuery.map( data.sort( sortByStatusAndName ), function(target) {
-			var statusTpl = "<span class={1}>{0}</span>"
-			return {
-				name: target.name,
-				ipaddr: target.ipaddr,
-				status: (target.tripped =="1")
-					? ("<b>"+NETMON.format( statusTpl, 'off-line' ,'text-danger' )+"</b>")
-					: NETMON.format( statusTpl, 'on-line' ,'text-success' )
-			}
-		});
-		var html = NETMON.array2Table(model,'name',[],'','montool-statustbl','montool-statustbl0',false)
+		var html = getHtml(data);
 		set_panel_html(html);
+		
+		function _onClickTest(e) {
+			var ip = $(this).data("ip")
+			var url = NETMON.buildUPnPActionUrl(deviceID,NETMON.NETMON_Svs,"TestDevice",{ipaddr:ip})
+			jQuery.get( url )
+			.done(function( data ) {
+				var success = (jQuery.isPlainObject(data)==true) ? "Online" : "Offline" 
+				alert(success)
+				var data = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'DevicesStatus',1))
+				var html = getHtml(data);
+				jQuery(".montool-statustbl").replaceWith(html)
+			})			
+		};
+		
+		jQuery(".montool-statustbl").parent()
+				.off('click')
+				.on('click','.montool-test-btn',_onClickTest)
+				
 		// api.setCpanelContent(html);
 	};
 	

@@ -23,6 +23,14 @@
 		</action>
 
 		<action>
+			<serviceId>urn:upnp-org:serviceId:netmon1</serviceId>
+			<name>TestDevice</name>
+			<run>
+			return UpnpTestDevice(lul_device,lul_settings.ipaddr)
+			</run>
+		</action>
+
+		<action>
 			<serviceId>urn:micasaverde-com:serviceId:SecuritySensor1</serviceId>
 			<name>SetArmed</name>
 			<run>

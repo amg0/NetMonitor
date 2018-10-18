@@ -327,20 +327,6 @@ function myNETMON_Handler(lul_request, lul_parameters, lul_outputformat)
 end
 
 ------------------------------------------------
--- UPNP Actions Sequence
-------------------------------------------------
-local function setDebugMode(lul_device,newDebugMode)
-  lul_device = tonumber(lul_device)
-  newDebugMode = tonumber(newDebugMode) or 0
-  debug(string.format("setDebugMode(%d,%d)",lul_device,newDebugMode))
-  luup.variable_set(NETMON_SERVICE, "Debug", newDebugMode, lul_device)
-  if (newDebugMode==1) then
-	DEBUG_MODE=true
-  else
-	DEBUG_MODE=false
-  end
-end
-------------------------------------------------
 -- UPNP actions Sequence
 ------------------------------------------------
 local function UserSetArmed(lul_device,newArmedValue)
@@ -412,6 +398,37 @@ function refreshDevices(lul_device,no_refresh)
 		luup.call_delay("refreshDevices",period,tostring(lul_device))
 	end
 	return true	-- would be false if there is an error, but a failed discovery device is not an error
+end
+
+------------------------------------------------
+-- UPNP Actions Sequence
+------------------------------------------------
+local function setDebugMode(lul_device,newDebugMode)
+  lul_device = tonumber(lul_device)
+  newDebugMode = tonumber(newDebugMode) or 0
+  debug(string.format("setDebugMode(%d,%d)",lul_device,newDebugMode))
+  luup.variable_set(NETMON_SERVICE, "Debug", newDebugMode, lul_device)
+  if (newDebugMode==1) then
+	DEBUG_MODE=true
+  else
+	DEBUG_MODE=false
+  end
+end
+
+local function UpnpTestDevice(lul_device,ipaddr)
+	lul_device = tonumber(lul_device)
+	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
+	local targets = json.decode(js)
+	local found_device_index = 0
+	local success = false
+	for k,device_def in pairs(targets) do
+		if (device_def.ipaddr==ipaddr) then
+			success = refreshOneDevice(lul_device, device_def)
+			-- refresh stats
+			getDevicesStatus(lul_device)
+		end
+	end
+	return success
 end
 
 local function SyncDevices(lul_device)	 
