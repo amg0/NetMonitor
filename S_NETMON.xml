@@ -59,7 +59,7 @@
                     <direction>in</direction>
                     <relatedStateVariable>ipaddr</relatedStateVariable>
                 </argument>
-            </argumentList>
+			</argumentList>
         </action>
 	</actionList>
 </scpd>
