@@ -255,12 +255,18 @@ function getDevicesStatus(lul_device)
 	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
 	local targets = json.decode(js)
 	local result = {}
+	local deviceNotice = ""
 	local count = 0
 	for k,device_def in pairs(targets) do
 		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
 		local tripped = luup.variable_get('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', lul_child)
 		if (tripped=="1") then
 			count = count +1 
+			 if count == 1 then
+			 	 deviceNotice =  device_def.name 
+				 else
+				 deviceNotice = deviceNotice ..", ".. device_def.name 
+			 end
 		end
 		table.insert(result, {
 			name = device_def.name,
@@ -268,6 +274,7 @@ function getDevicesStatus(lul_device)
 			tripped = tripped
 		})
 	end
+	setVariableIfChanged(NETMON_SERVICE, "DevicesNotification", deviceNotice, lul_device)
 	setVariableIfChanged(NETMON_SERVICE, "DevicesStatus", json.encode(result), lul_device)
 	setVariableIfChanged(NETMON_SERVICE, "DevicesOfflineCount", count, lul_device)
 	return result
@@ -477,7 +484,8 @@ function startupDeferred(lul_device)
 	local targets = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "[]")
 	local ds = getSetVariable(NETMON_SERVICE, "DevicesStatus", lul_device, "[]")
 	local dsc = getSetVariable(NETMON_SERVICE, "DevicesOfflineCount", lul_device, 0)
-
+    local dsn = getSetVariable(NETMON_SERVICE, "DevicesNotification", lul_device, "")
+	
 	local types = {}
 	for k,v in pairs(discovery_func) do
 		table.insert(types,k)
