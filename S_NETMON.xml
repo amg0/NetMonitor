@@ -29,6 +29,12 @@
             <defaultValue></defaultValue>
             <shortCode>devicesofflinecount</shortCode>
         </stateVariable>
+        <stateVariable sendEvents="yes">
+            <name>DevicesNotification</name>
+            <dataType>string</dataType>
+            <defaultValue></defaultValue>
+            <shortCode>devicesnotification</shortCode>
+        </stateVariable>
 	</serviceStateTable>
     <actionList>
         <action>
