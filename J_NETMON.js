@@ -59,12 +59,14 @@ var NETMON = (function(api,$) {
 			var name = NETMON.format("<input class='form-control' id='netmon-name' value='{0}' required></input>",target.name)
 			var ipaddr = NETMON.format("<input class='form-control' id='netmon-ipaddr' value='{0}' required></input>",target.ipaddr || "")
 			var page = NETMON.format("<input class='form-control {1}' id='netmon-page' value='{0}'></input>",target.page || "", (target.type=='http') ? '' : 'hidden d-none')
+			var inverted = NETMON.format("<input type='checkbox' class='form-control' id='netmon-inverted' {0}></input>", (target.inverted==1) ? 'checked' : '')
 			var btn_del = NETMON.format(btnTemplate,'netmon-del','Delete','fa fa-trash-o text-danger','btn-sm netmon-del')
-			return NETMON.format('<tr><td>{0}</td> <td>{1}</td> <td>{2}</td> <td>{3}</td> <td>{4}</td> </tr>',
+			return NETMON.format('<tr><td>{0}</td> <td>{1}</td> <td>{2}</td> <td>{3}</td> <td>{4}</td> <td>{5}</td></tr>',
 				name,
 				type,
 				ipaddr,
 				page,
+				inverted,
 				btn_del
 			);
 		};
@@ -73,7 +75,8 @@ var NETMON = (function(api,$) {
 			var target = {
 				name: name,
 				type: jQuery(row).find("#netmon-type").val(),
-				ipaddr: jQuery(row).find("#netmon-ipaddr").val()
+				ipaddr: jQuery(row).find("#netmon-ipaddr").val(),
+				inverted: jQuery(row).find("#netmon-inverted").is(":checked") ? 1 : 0
 			}
 			var bool = jQuery(row).find("#netmon-page").hasClass("d-none") || jQuery(row).find("#netmon-page").hasClass("hidden")
 			if (bool == false) {
@@ -120,7 +123,7 @@ var NETMON = (function(api,$) {
 		var btn_add = NETMON.format(btnTemplate,'add','Add','fa fa-plus','netmon-add')
 		html += '<form action="javascript:void(0);"><table class="table table-responsive table-sm netmon-devicetbl">'
 		html += '<thead>'
-		html += '<tr><th>Name</th> <th>Type</th> <th>IPAddr</th> <th>Page</th> <th>Action</th> </tr>'
+		html += '<tr><th>Name</th> <th>Type</th> <th>IPAddr</th> <th>Page</th> <th>Inverted</th> <th>Action</th> </tr>'
 		html += '</thead>'
 		html += '<tbody>'
 		jQuery.each(mytargets.sort(sortByName), function(idx,target) {
@@ -150,6 +153,7 @@ var NETMON = (function(api,$) {
 				name: '',
 				type:'ping',
 				ipaddr:"",
+				inverted:'',
 				page:""
 			}
 			var html = _buildTargetLineHtml(target) 
@@ -197,9 +201,9 @@ var NETMON = (function(api,$) {
 	
 	function NETMON_Status(deviceID) {
 		function sortByStatusAndName(a,b) {
-			if (a.tripped > b.tripped)
+			if (a.offline > b.offline)
 				return -1
-			if (a.tripped < b.tripped)
+			if (a.offline < b.offline)
 				return 1
 			if (a.name == b.name)
 				return 0
@@ -211,7 +215,7 @@ var NETMON = (function(api,$) {
 				return {
 					name: target.name,
 					ipaddr: target.ipaddr,
-					status: (target.tripped =="1")
+					status: (target.offline == 1)
 						? ("<b>"+NETMON.format( statusTpl, 'off-line' ,'text-danger' )+"</b>")
 						: NETMON.format( statusTpl, 'on-line' ,'text-success' ),
 					test: NETMON.format('<button type="button" class="btn btn-outline-primary btn-sm montool-test-btn" data-ip="{0}">Test</button>',target.ipaddr)

@@ -11,7 +11,7 @@ local NETMON_SERVICE	= "urn:upnp-org:serviceId:netmon1"
 local devicetype	= "urn:schemas-upnp-org:device:netmon:1"
 -- local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.5"
+local version		= "v0.7"
 local JSON_FILE = "D_NETMON.json"
 local UI7_JSON_FILE = "D_NETMON_UI7.json"
 
@@ -259,9 +259,12 @@ function getDevicesStatus(lul_device)
 	local count = 0
 	for k,device_def in pairs(targets) do
 		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
+		local offline = 0
 		local tripped = luup.variable_get('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', lul_child)
-		if (tripped=="1") then
+		local test_value =(device_def.inverted==1) and "0" or "1"
+		if (tripped==test_value) then
 			count = count +1 
+			offline = 1
 			 if count == 1 then
 			 	 deviceNotice =  device_def.name 
 				 else
@@ -271,6 +274,7 @@ function getDevicesStatus(lul_device)
 		table.insert(result, {
 			name = device_def.name,
 			ipaddr = device_def.ipaddr,
+			offline = offline,
 			tripped = tripped
 		})
 	end
@@ -381,7 +385,10 @@ local function refreshOneDevice(lul_device,device_def)
 		end
 		-- todo
 		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
-		setVariableIfChanged('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', (success==false) and "1" or "0", lul_child)
+		local inverted = device_def.inverted or 0
+		local value = (inverted>0) and (not success) or success
+		local tripped = (value==false) and "1" or "0"
+		setVariableIfChanged('urn:micasaverde-com:serviceId:SecuritySensor1', 'Tripped', tripped, lul_child)
 	end
 	return success
 end
