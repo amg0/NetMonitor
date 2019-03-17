@@ -76,7 +76,8 @@ var NETMON = (function(api,$) {
 				name: name,
 				type: jQuery(row).find("#netmon-type").val(),
 				ipaddr: jQuery(row).find("#netmon-ipaddr").val(),
-				inverted: jQuery(row).find("#netmon-inverted").is(":checked") ? 1 : 0
+				inverted: jQuery(row).find("#netmon-inverted").is(":checked") ? 1 : 0,
+				// success: false
 			}
 			var bool = jQuery(row).find("#netmon-page").hasClass("d-none") || jQuery(row).find("#netmon-page").hasClass("hidden")
 			if (bool == false) {
@@ -201,27 +202,27 @@ var NETMON = (function(api,$) {
 	
 	function NETMON_Status(deviceID) {
 		function sortByStatusAndName(a,b) {
-			if (a.offline > b.offline)
-				return -1
-			if (a.offline < b.offline)
-				return 1
+			// if (a.success > b.success)
+				// return 1
+			// if (a.success < b.success)
+				// return -1
 			if (a.name == b.name)
 				return 0
 			return (a.name < b.name) ? -1 : 1
 		}
 		function getHtml(data) {
-			var model = jQuery.map( data.sort( sortByStatusAndName ), function(target) {
+			var model = jQuery.map( data, function(target,ipaddr) {
 				var statusTpl = "<span class={1}>{0}</span>"
 				return {
 					name: target.name,
-					ipaddr: target.ipaddr,
-					status: (target.offline == 1)
+					ipaddr: ipaddr,
+					status: (target.success != true)
 						? ("<b>"+NETMON.format( statusTpl, 'off-line' ,'text-danger' )+"</b>")
 						: NETMON.format( statusTpl, 'on-line' ,'text-success' ),
-					test: NETMON.format('<button type="button" class="btn btn-outline-primary btn-sm montool-test-btn" data-ip="{0}">Test</button>',target.ipaddr)
+					test: NETMON.format('<button type="button" class="btn btn-outline-primary btn-sm montool-test-btn" data-ip="{0}">Test</button>',ipaddr)
 				}
 			});
-			return NETMON.array2Table(model,'name',[],'','montool-statustbl','montool-statustbl0',false)
+			return NETMON.array2Table(model.sort( sortByStatusAndName ),'name',[],'','montool-statustbl','montool-statustbl0',false)
 		}
 		var data = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'DevicesStatus',1))
 		var html = getHtml(data);
@@ -231,12 +232,15 @@ var NETMON = (function(api,$) {
 			var ip = $(this).data("ip")
 			var url = NETMON.buildUPnPActionUrl(deviceID,NETMON.NETMON_Svs,"TestDevice",{ipaddr:ip})
 			jQuery.get( url )
-			.done(function( data ) {
-				var success = (jQuery.isPlainObject(data)==true) ? "Online" : "Offline" 
-				alert(success)
-				var data = JSON.parse( get_device_state(deviceID,  NETMON.NETMON_Svs, 'DevicesStatus',1))
-				var html = getHtml(data);
-				jQuery(".montool-statustbl").replaceWith(html)
+			.done(function( result ) {
+				var success = (jQuery.isPlainObject(result)==true) ? "Online" : "Offline" ;
+				jQuery.get(  NETMON.buildUPnPActionUrl(deviceID,NETMON.NETMON_Svs,"GetDevicesStatus") )
+				.done( function( result2) {
+					var data = JSON.parse( result2["u:GetDevicesStatusResponse"].DevicesStatus );
+					var html = getHtml(data);
+					jQuery("table.montool-statustbl").replaceWith( html );
+				})
+				alert(success);
 			})			
 		};
 		

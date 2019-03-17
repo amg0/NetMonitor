@@ -15,6 +15,7 @@ The big differences with similar plugin ( like the ping sensor ) are that :
 
 ### Version
 0.7 : support the inverted option per device ( 0 : show tripped when offline  1: show tripped when online )
+0.8 : change to DeviceStatus variable format. json data structured is indexed by ipaddr
 
 ### Variables
 The time between each polling rate is configurable by the PollRate variable and devices are polled in a round robin way. so you are garanteed that the VERA is not over used, but of course the status is only close to real time and it depends on the number of device you monitor.
@@ -23,7 +24,7 @@ The time between each polling rate is configurable by the PollRate variable and 
 - Debug : 0 or 1 according to debug mode ( 1 == debug )
 - DevicesOfflineCount : offline devices' count
 - DevicesNotification : csv list of tripped device's name ( emits upnp event when changed)
-- DevicesStatus : a JSON table of device record, each device record contains tripped status, name, ipaddr
+- DevicesStatus : a JSON hash table of device record indexed by ipaddr, each record contains tripped status, name
 - PollRate : the rate in seconds at which detection probes are run. the plugin goes to each device one by one , so 5 devices with a rate of 10 seconds will take 5x10 = 50 seconds (not counting the wait time for the response)  to circle accross the complete list of devices
 - Targets : a JSON internal structure to describe the device targets to monitor. edit it with the Settings screens
 - Types : internal , types of probes
