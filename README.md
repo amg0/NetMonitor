@@ -14,8 +14,8 @@ The big differences with similar plugin ( like the ping sensor ) are that :
 2. will create automatically child device which are STANDARD Motion sensor devices ( same device type & actions & notifications ) for all your declared devices. 
 
 ### Version
-0.7 : support the inverted option per device ( 0 : show tripped when offline  1: show tripped when online )
-0.8 : change to DeviceStatus variable format. json data structured is indexed by ipaddr
+- 0.7 : support the inverted option per device ( 0 : show tripped when offline  1: show tripped when online )
+- 0.8 : change to DeviceStatus variable format. json data structured is indexed by ipaddr
 
 ### Variables
 The time between each polling rate is configurable by the PollRate variable and devices are polled in a round robin way. so you are garanteed that the VERA is not over used, but of course the status is only close to real time and it depends on the number of device you monitor.
