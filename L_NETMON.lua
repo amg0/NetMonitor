@@ -1,3 +1,4 @@
+-- // NETMON Plugin
 -- // This program is free software: you can redistribute it and/or modify
 -- // it under the condition that it is for private or home useage and
 -- // this whole comment is reproduced in the source code file.
@@ -11,7 +12,7 @@ local NETMON_SERVICE	= "urn:upnp-org:serviceId:netmon1"
 local devicetype	= "urn:schemas-upnp-org:device:netmon:1"
 -- local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.8"
+local version		= "v0.9beta"
 local JSON_FILE = "D_NETMON.json"
 local UI7_JSON_FILE = "D_NETMON_UI7.json"
 
@@ -246,9 +247,14 @@ end
 
 
 ------------------------------------------------------------------------------------------------
+-- Private Methods
+------------------------------------------------------------------------------------------------
+local function getUniqueChildID( device_def ) 
+	return device_def.ipaddr .. "#" .. device_def.type .. "#" .. (device_def.page or "")
+end
+
+------------------------------------------------------------------------------------------------
 -- Http handlers : Communication FROM ALTUI
--- http://192.168.1.5:3480/data_request?id=lr_NETMON_Handler&command=xxx
--- recommended settings in ALTUI: PATH = /data_request?id=lr_NETMON_Handler&mac=$M&deviceID=114
 ------------------------------------------------------------------------------------------------
 function getDevicesStatus(lul_device)
 	debug( string.format("getDevicesStatus(%s)",lul_device))
@@ -258,14 +264,15 @@ function getDevicesStatus(lul_device)
 	local deviceNotice = ""
 	local count = 0
 	for k,device_def in pairs(targets) do
-		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
+		local uniqueChildID = getUniqueChildID( device_def ) 
+		local lul_child,device = findChild( lul_device, 'child_'.. uniqueChildID )
 		local tripped = luup.variable_get("urn:micasaverde-com:serviceId:SecuritySensor1", "Tripped", lul_child)
 		local inverted = device_def.inverted or 0
 		tripped = tonumber(tripped)
 		if (tonumber(inverted)>0) then
 			tripped = 1-tripped
 		end
-		devicesStatus[device_def.ipaddr] = {
+		devicesStatus[uniqueChildID] = {
 			success = (tripped==0),
 			name = device_def.name
 		}
@@ -369,7 +376,7 @@ function httpDevice(device_def)
 	return false
 end
 
-local discovery_func = {
+discovery_func = {
 	["ping"] = pingDevice,
 	["http"] = httpDevice,	
 }
@@ -384,7 +391,7 @@ local function refreshOneDevice(lul_device,device_def)
 			debug("success")
 		end
 		-- todo
-		local lul_child,device = findChild( lul_device, 'child_'.. device_def.ipaddr )
+		local lul_child,device = findChild( lul_device, 'child_'.. getUniqueChildID( device_def )  )
 		local inverted = device_def.inverted or 0
 		local value = (inverted>0) and (not device_def.success) or device_def.success
 		local tripped = (value==false) and "1" or "0"
@@ -413,6 +420,7 @@ function refreshDevices(lul_device,no_refresh)
 		debug(string.format("programming next refreshDevices(%s) in %s sec",lul_device,period))
 		luup.call_delay("refreshDevices",period,tostring(lul_device))
 	end
+	
 	return true	-- would be false if there is an error, but a failed discovery device is not an error
 end
 
@@ -431,22 +439,36 @@ local function setDebugMode(lul_device,newDebugMode)
   end
 end
 
+local function UpnpTestOneDevice(lul_device,device_def)
+	debug(string.format("UpnpTestOneDevice(%s,%s)",lul_device,json.encode(device_def)))
+	lul_device = tonumber(lul_device)
+	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
+	local targets = json.decode(js)
+	local found_device_index = 0
+	device_def.success = refreshOneDevice(lul_device, device_def)
+	--debug(string.format("RESULT UpnpTestOneDevice(%s,%s)",lul_device,json.encode(device_def)))
+	return device_def
+end
+
 local function UpnpTestDevice(lul_device,ipaddr)
 	debug(string.format("UpnpTestDevice(%s,%s)",lul_device,ipaddr))
+	local result = true
 	lul_device = tonumber(lul_device)
 	local js = luup.variable_get(NETMON_SERVICE, "Targets", lul_device)
 	local targets = json.decode(js)
 	local found_device_index = 0
 	for k,device_def in pairs(targets) do
 		if (device_def.ipaddr==ipaddr) then
-			targets[k].success = refreshOneDevice(lul_device, device_def)
-			luup.variable_set(NETMON_SERVICE, "Targets", json.encode(targets),lul_device)
-			-- refresh stats
-			getDevicesStatus(lul_device)
-			return targets[k].success
+			targets[k] = UpnpTestOneDevice(lul_device,device_def)
+			result = result and targets[k].success
 		end
 	end
-	return false
+	
+	--debug(string.format("RESULT UpnpTestDevice(%s,%s)",lul_device,json.encode(targets)))
+	luup.variable_set(NETMON_SERVICE, "Targets", json.encode(targets),lul_device)
+	-- refresh stats
+	getDevicesStatus(lul_device)
+  return result -- true if all were true or zero device with that ip addr
 end
 
 local function SyncDevices(lul_device)	 
@@ -460,7 +482,7 @@ local function SyncDevices(lul_device)
 			local idx = tonumber(k)
 			luup.chdev.append(
 				lul_device, child_devices,
-				'child_'..v.ipaddr,			-- altid
+				'child_' .. getUniqueChildID( v ),			-- altid
 				v.name,						-- device name
 				'urn:schemas-micasaverde-com:device:MotionSensor:1',				-- children device type
 				'D_MotionSensor1.xml',		-- children D-file
@@ -501,6 +523,7 @@ function startupDeferred(lul_device)
 	for k,v in pairs(discovery_func) do
 		table.insert(types,k)
 	end
+	debug(string.format("NETMON Types:%s", json.encode(types)))
 	setVariableIfChanged(NETMON_SERVICE, "Types", json.encode(types), lul_device)
 	
 	-- local zz = getSetVariable(NETMON_SERVICE, "Targets", lul_device, "")

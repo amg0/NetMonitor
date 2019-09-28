@@ -211,15 +211,16 @@ var NETMON = (function(api,$) {
 			return (a.name < b.name) ? -1 : 1
 		}
 		function getHtml(data) {
-			var model = jQuery.map( data, function(target,ipaddr) {
+			var model = jQuery.map( data, function(target,probe) {
 				var statusTpl = "<span class={1}>{0}</span>"
+				var splits = probe.split('#')
 				return {
 					name: target.name,
-					ipaddr: ipaddr,
+					probe: splits.join(" / "),
 					status: (target.success != true)
 						? ("<b>"+NETMON.format( statusTpl, 'off-line' ,'text-danger' )+"</b>")
 						: NETMON.format( statusTpl, 'on-line' ,'text-success' ),
-					test: NETMON.format('<button type="button" class="btn btn-outline-primary btn-sm montool-test-btn" data-ip="{0}">Test</button>',ipaddr)
+					test: NETMON.format('<button type="button" class="btn btn-outline-primary btn-sm montool-test-btn" data-ip="{0}">Test</button>',splits[0])
 				}
 			});
 			return NETMON.array2Table(model.sort( sortByStatusAndName ),'name',[],'','montool-statustbl','montool-statustbl0',false)
