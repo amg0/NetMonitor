@@ -12,7 +12,7 @@ local NETMON_SERVICE	= "urn:upnp-org:serviceId:netmon1"
 local devicetype	= "urn:schemas-upnp-org:device:netmon:1"
 -- local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.9beta"
+local version		= "v0.10"
 local JSON_FILE = "D_NETMON.json"
 local UI7_JSON_FILE = "D_NETMON_UI7.json"
 
@@ -372,7 +372,7 @@ function httpDevice(device_def)
 	if ((code==0) or (httpcode==200) or (httpcode==302) or (httpcode==401) or (httpcode==403) ) then
 		return true
 	end
-	warning(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
+	debug(string.format("failed to wget to %s, http.request returned %d", newUrl,httpcode))
 	return false
 end
 
