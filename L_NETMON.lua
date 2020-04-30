@@ -12,7 +12,7 @@ local NETMON_SERVICE	= "urn:upnp-org:serviceId:netmon1"
 local devicetype	= "urn:schemas-upnp-org:device:netmon:1"
 -- local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.11"
+local version		= "v0.12"
 local JSON_FILE = "D_NETMON.json"
 local UI7_JSON_FILE = "D_NETMON_UI7.json"
 
@@ -393,6 +393,8 @@ local function refreshOneDevice(lul_device,device_def)
 		-- todo
 		local lul_child,device = findChild( lul_device, 'child_'.. getUniqueChildID( device_def )  )
 		local inverted = device_def.inverted or 0
+		local value = device_def.success
+ 		local tripped = (value==false) and "1" or "0"
 		tripped = tonumber(tripped)
 		if (tonumber(inverted)>0) then
 			tripped = 1-tripped
